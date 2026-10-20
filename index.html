@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fdf6e9">
+<title>樂器合照</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="topbar">
+    <div class="brand"><span class="logo">🎻</span> 樂器合照</div>
+    <button id="helpBtn" class="chip" aria-label="使用說明">❓ 說明</button>
+  </header>
+
+  <main id="stage">
+    <div id="vwrap"><video id="video" playsinline muted autoplay></video></div>
+    <div id="layer"><canvas id="frameCanvas"></canvas></div>
+    <div id="touch" aria-label="相片範圍"></div>
+
+    <div id="selbar" hidden>
+      <button data-act="smaller" aria-label="縮小"><span>➖</span>縮小</button>
+      <button data-act="bigger" aria-label="放大"><span>➕</span>放大</button>
+      <button data-act="rotl" aria-label="向左轉"><span>↺</span>左轉</button>
+      <button data-act="rotr" aria-label="向右轉"><span>↻</span>右轉</button>
+      <button data-act="flip" aria-label="左右反轉"><span>⇋</span>反轉</button>
+      <button data-act="front" aria-label="放到最前"><span>⬆︎</span>最前</button>
+      <button data-act="delete" class="danger" aria-label="刪除"><span>🗑️</span>刪除</button>
+    </div>
+
+    <div id="controls">
+      <button id="timerBtn" class="round small" aria-pressed="false" aria-label="三秒倒數"><span class="ico">⏱️</span><span class="lbl">倒數 關</span></button>
+      <button id="shutter" aria-label="拍照"><span></span></button>
+      <button id="switchBtn" class="round small" aria-label="切換前後鏡頭"><span class="ico">🔄</span><span class="lbl">轉鏡頭</span></button>
+    </div>
+
+    <div id="countdown" hidden></div>
+    <div id="flash"></div>
+
+    <div id="startScreen">
+      <div class="card">
+        <div class="bigemoji">🎺🎻🥁</div>
+        <h1>樂器合照</h1>
+        <p>揀樂器、擺好位置，<br>同樂器一齊影張相！</p>
+        <button id="startBtn" class="primary">📷 開始</button>
+        <p id="startMsg" class="msg"></p>
+      </div>
+    </div>
+  </main>
+
+  <section id="tray">
+    <div id="tabs" role="tablist"></div>
+    <div id="picker"></div>
+    <div id="trayActions">
+      <label class="toggle"><input type="checkbox" id="frameToggle"><span>🖼️ 相框</span></label>
+      <div id="orientSeg" class="seg" role="radiogroup" aria-label="相片方向">
+        <button type="button" role="radio" data-o="portrait" aria-checked="true"><span class="shape tall"></span>直度</button>
+        <button type="button" role="radio" data-o="landscape" aria-checked="false"><span class="shape wide"></span>橫度</button>
+      </div>
+      <input id="titleInput" type="text" maxlength="24" value="音樂課合照" aria-label="相框標題" disabled>
+      <button id="clearBtn" class="chip">🧹 清除全部</button>
+    </div>
+  </section>
+</div>
+
+<div id="result" hidden>
+  <div class="resultInner">
+    <p class="hint" id="resultHint">相片已完成！</p>
+    <img id="resultImg" alt="拍好的相片">
+    <div class="resultBtns">
+      <button id="shareBtn" class="primary" hidden>📤 分享 / 儲存</button>
+      <a id="downloadLink" class="primary btnlike" download>💾 下載相片</a>
+      <button id="againBtn" class="secondary">📷 再影一張</button>
+    </div>
+  </div>
+</div>
+
+<div id="help" hidden>
+  <div class="card">
+    <h2>點樣用？</h2>
+    <ol>
+      <li>喺下面揀<b>弦樂、木管、銅管、敲擊</b>，再㩒樂器加入畫面。</li>
+      <li><b>一隻手指</b>拖動樂器；<b>兩隻手指</b>開合可以放大縮小，扭動可以旋轉。</li>
+      <li>㩒一下樂器可以選中佢，上面會出現<b>放大、縮小、轉、反轉、刪除</b>掣。</li>
+      <li>揀<b>直度</b>（3:4）或<b>橫度</b>（4:3）相片，唔理部機點拎都得；開「相框」可以加校徽同標題。</li>
+      <li>㩒中間嘅<b>大圓掣</b>影相。可以開「倒數」，有三秒準備時間。</li>
+      <li>影好之後㩒「分享 / 儲存」；iPhone / iPad 亦可以<b>長按相片</b>儲存。</li>
+    </ol>
+    <p class="small">電腦：用滑鼠拖動；滾輪放大縮小；Shift + 滾輪旋轉。</p>
+    <button id="helpClose" class="primary">知道喇！</button>
+  </div>
+</div>
+
+<script src="instruments.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
