@@ -9,10 +9,16 @@
   const MAX_W_MM = Math.max(...INST.map(i => i.w)), MAX_H_MM = Math.max(...INST.map(i => i.h));
   const MIN_FRAC = 0.24; // tiny instruments (castanets, triangle) get at least this size so kids can see them
 
-  const ORIENT_KEY = 'arOrchestra.orient', RATIO = { portrait: 3 / 4, landscape: 4 / 3 }; // photo width / height
-  let savedOrient = null; try { savedOrient = localStorage.getItem(ORIENT_KEY); } catch (e) {}
+  const ORIENT_KEY = 'arOrchestra.orient', FRAME_STYLE_KEY = 'arOrchestra.frameStyle', RATIO = { portrait: 3 / 4, landscape: 4 / 3 }; // photo width / height
+  let savedOrient = null, savedFrameStyle = null;
+  try { savedOrient = localStorage.getItem(ORIENT_KEY); } catch (e) {}
+  try { savedFrameStyle = localStorage.getItem(FRAME_STYLE_KEY); } catch (e) {}
+  const frameStyles = window.FRAME_STYLES || [];
+  const frameById = window.FRAME_STYLE_BY_ID || {};
+  const defaultFrameId = window.FRAME_DEFAULT_ID || 'anniversary';
+  const initialFrameStyle = (savedFrameStyle && frameById[savedFrameStyle]) ? savedFrameStyle : defaultFrameId;
   const state = { stream: null, facing: 'user', mirror: true, items: [], selected: null, timer: false, busy: false, frame: false, title: '音樂課合照',
-    orient: savedOrient === 'landscape' ? 'landscape' : 'portrait' };
+    orient: savedOrient === 'landscape' ? 'landscape' : 'portrait', frameStyle: initialFrameStyle };
   let nextId = 1;
 
   // ---------- assets (images + alpha masks for accurate hit testing) ----------
@@ -224,8 +230,12 @@
   });
 
   // ---------- photo frame ----------
-  const frameToggle = $('#frameToggle'), titleInput = $('#titleInput');
-  frameToggle.addEventListener('change', () => { state.frame = frameToggle.checked; titleInput.disabled = !state.frame; layoutAll(); });
+  const frameToggle = $('#frameToggle'), titleInput = $('#titleInput'), frameStyleRow = $('#frameStyles');
+  function syncFrameUi() {
+    titleInput.disabled = !state.frame;
+    if (frameStyleRow) frameStyleRow.hidden = !state.frame;
+  }
+  frameToggle.addEventListener('change', () => { state.frame = frameToggle.checked; syncFrameUi(); layoutAll(); });
   titleInput.addEventListener('input', () => { state.title = titleInput.value; layoutAll(); });
   const crestImg = new Image(); crestImg.onload = () => layoutAll(); crestImg.src = 'assets/crest.png';
   let frameFontReady = Promise.resolve();
@@ -234,63 +244,33 @@
     frameFontReady = ff.load().then(f => { document.fonts.add(f); layoutAll(); }).catch(() => {});
   }
   function roundRect(ctx, x, y, w, h, r) { ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+  function setFrameStyle(id, save) {
+    const style = frameById[id] || frameById[defaultFrameId] || frameStyles[0];
+    if (!style) return;
+    state.frameStyle = style.id;
+    if (frameStyleRow) {
+      frameStyleRow.querySelectorAll('button').forEach(b => b.setAttribute('aria-checked', String(b.dataset.style === state.frameStyle)));
+    }
+    if (save) try { localStorage.setItem(FRAME_STYLE_KEY, state.frameStyle); } catch (e) {}
+    layoutAll();
+  }
+  if (frameStyleRow) {
+    frameStyleRow.innerHTML = '';
+    frameStyles.forEach(s => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.setAttribute('role', 'radio'); b.dataset.style = s.id;
+      b.textContent = s.name; b.setAttribute('aria-label', '相框樣式 ' + s.name);
+      b.addEventListener('click', () => setFrameStyle(s.id, true));
+      frameStyleRow.appendChild(b);
+    });
+  }
+  setFrameStyle(state.frameStyle, false);
+  syncFrameUi();
   function drawFrame(ctx, W, H) {
     if (!state.frame) return;
-    const m = Math.min(W, H), t = m * 0.035, band = m * 0.12, r = m * 0.05;
-    ctx.save();
-    const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#ffd6a5'); g.addColorStop(.5, '#fdffb6'); g.addColorStop(1, '#caffbf');
-    ctx.beginPath(); ctx.rect(0, 0, W, H); roundRect(ctx, t, t, W - 2 * t, H - t - band, r);
-    ctx.fillStyle = g; ctx.fill('evenodd');
-    ctx.beginPath(); roundRect(ctx, t, t, W - 2 * t, H - t - band, r); ctx.lineWidth = m * 0.006; ctx.strokeStyle = '#fff'; ctx.stroke();
-    // corner decorations: 純潔 (top-left), 120 (top-right), crest (bottom-left), 剛毅 (bottom-right)
-    const BLUE = '#1A47A0', FF = s => `${s}px "FrameHuninn","PingFang HK","PingFang TC","Noto Sans CJK TC","Microsoft JhengHei",sans-serif`;
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-    const boldText = (txt, x, y, fs, fill, outline) => {      // Huninn has one weight: embolden with a same-colour stroke
-      ctx.font = FF(fs);
-      ctx.lineWidth = fs * 0.30; ctx.strokeStyle = outline || '#fff'; ctx.strokeText(txt, x, y);
-      ctx.lineWidth = fs * 0.07; ctx.strokeStyle = fill; ctx.strokeText(txt, x, y);
-      ctx.fillStyle = fill; ctx.fillText(txt, x, y);
-      return ctx.measureText(txt).width;
-    };
-    const badge = (cx, cy, w, h) => {
-      ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.18)'; ctx.shadowBlur = h * 0.15; ctx.shadowOffsetY = h * 0.04;
-      ctx.beginPath(); roundRect(ctx, cx - w / 2, cy - h / 2, w, h, h / 2); ctx.fillStyle = 'rgba(255,255,255,.92)'; ctx.fill(); ctx.restore();
-    };
-    const cfs = band * 0.46;                                 // corner text size
-    const bh = cfs * 1.45, by = t * 0.55 + bh / 2;           // top badges straddle the top border
-    ctx.font = FF(cfs); const w1 = ctx.measureText('純潔').width + cfs * 0.9;
-    badge(t * 0.6 + w1 / 2, by, w1, bh); boldText('純潔', t * 0.6 + w1 / 2, by + cfs * 0.04, cfs, BLUE);
-    const d = ['1', '2', '0'], dc = ['#FF3B30', '#FFB300', '#1E9BFF'], dfs = cfs * 1.08;
-    ctx.font = FF(dfs); const dw = d.map(ch => ctx.measureText(ch).width + dfs * 0.08), tw120 = dw.reduce((a, b) => a + b, 0);
-    const w2 = tw120 + cfs * 0.9, cx2 = W - t * 0.6 - w2 / 2; badge(cx2, by, w2, bh);
-    let x = cx2 - tw120 / 2;
-    d.forEach((ch, i) => {
-      const cx = x + dw[i] / 2, y = by + dfs * 0.04; ctx.font = FF(dfs);
-      ctx.lineWidth = dfs * 0.34; ctx.strokeStyle = '#fff'; ctx.strokeText(ch, cx, y);
-      ctx.lineWidth = dfs * 0.16; ctx.strokeStyle = '#23305a'; ctx.strokeText(ch, cx, y);
-      ctx.lineWidth = dfs * 0.05; ctx.strokeStyle = dc[i]; ctx.strokeText(ch, cx, y);
-      ctx.fillStyle = dc[i]; ctx.fillText(ch, cx, y); x += dw[i];
-    });
-    const by2 = H - band / 2;
-    let leftR = t, rightR = t;
-    if (crestImg.complete && crestImg.naturalWidth) {
-      const ch = band * 0.92, cw = ch * crestImg.naturalWidth / crestImg.naturalHeight, cx = t * 0.9;
-      ctx.drawImage(crestImg, cx, by2 - ch / 2, cw, ch); leftR = cx + cw;
-    }
-    ctx.font = FF(cfs); const w4 = ctx.measureText('剛毅').width;
-    boldText('剛毅', W - t * 0.9 - cfs * 0.15 - w4 / 2, by2 + cfs * 0.04, cfs, BLUE); rightR = t * 0.9 + cfs * 0.15 + w4;
-    // title (kept clear of the bottom corners)
-    const title = (state.title || '').trim();
-    if (title) {
-      let fs = band * 0.52;
-      const font = s => `bold ${s}px "PingFang HK","PingFang TC","Noto Sans CJK TC","Noto Sans TC","Microsoft JhengHei",sans-serif`;
-      ctx.font = font(fs);
-      const side = Math.max(leftR, rightR) + band * 0.25, maxW = Math.max(band, W - 2 * side);
-      const tw = ctx.measureText(title).width; if (tw > maxW) { fs *= maxW / tw; ctx.font = font(fs); }
-      ctx.lineWidth = fs * 0.18; ctx.strokeStyle = '#fff';
-      ctx.strokeText(title, W / 2, H - band / 2); ctx.fillStyle = '#5a3e22'; ctx.fillText(title, W / 2, H - band / 2);
-    }
-    ctx.restore();
+    const style = frameById[state.frameStyle] || frameById[defaultFrameId] || frameStyles[0];
+    if (!style || typeof style.draw !== 'function') return;
+    style.draw(ctx, W, H, { title: state.title, crestImg, roundRect });
   }
   function drawFrameOverlay(R) {
     const dpr = Math.min(3, window.devicePixelRatio || 1);

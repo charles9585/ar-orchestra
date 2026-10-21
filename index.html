@@ -59,6 +59,7 @@
     <div id="picker"></div>
     <div id="trayActions">
       <label class="toggle"><input type="checkbox" id="frameToggle"><span>🖼️ 相框</span></label>
+      <div id="frameStyles" class="seg frame-styles" role="radiogroup" aria-label="相框樣式" hidden></div>
       <div id="orientSeg" class="seg" role="radiogroup" aria-label="相片方向">
         <button type="button" role="radio" data-o="portrait" aria-checked="true"><span class="shape tall"></span>直度</button>
         <button type="button" role="radio" data-o="landscape" aria-checked="false"><span class="shape wide"></span>橫度</button>
@@ -88,7 +89,7 @@
       <li>喺下面揀<b>弦樂、木管、銅管、敲擊</b>，再㩒樂器加入畫面。</li>
       <li><b>一隻手指</b>拖動樂器；<b>兩隻手指</b>開合可以放大縮小，扭動可以旋轉。</li>
       <li>㩒一下樂器可以選中佢，上面會出現<b>放大、縮小、轉、反轉、刪除</b>掣。</li>
-      <li>揀<b>直度</b>（3:4）或<b>橫度</b>（4:3）相片，唔理部機點拎都得；開「相框」可以加校徽同標題。</li>
+      <li>揀<b>直度</b>（3:4）或<b>橫度</b>（4:3）相片，唔理部機點拎都得；開「相框」可以加校徽同標題，再揀樣式（經典／校慶／簡約／全幅）。</li>
       <li>㩒中間嘅<b>大圓掣</b>影相。可以開「倒數」，有三秒準備時間。</li>
       <li>影好之後㩒「分享 / 儲存」；iPhone / iPad 亦可以<b>長按相片</b>儲存。</li>
     </ol>
@@ -98,6 +99,7 @@
 </div>
 
 <script src="instruments.js"></script>
+<script src="frames.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

@@ -109,3 +109,11 @@ button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;tou
   .inst{height:84px} .inst img{max-height:48px} #tabs button{min-height:40px}
 }
 #clearBtn{order:11;white-space:nowrap}
+
+/* Frame style chips (shown when 相框 is on) */
+#frameStyles{flex:1 1 100%;order:9;min-width:0}
+#frameStyles[hidden]{display:none!important}
+#frameStyles button{font-size:15px;min-width:0;padding:0 8px}
+@media (orientation: landscape) and (min-width: 700px){
+  #frameStyles{flex:1 1 100%;order:2}
+}
