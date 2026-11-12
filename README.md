@@ -14,3 +14,9 @@ The 🖼️ 相框 toggle adds a frame with an editable title and four corner de
 ## Photo orientation
 
 The 直度 / 橫度 switch beside 相框 sets the photo to a 3:4 portrait or 4:3 landscape shape, however the phone is held. The preview and the saved photo both use a centre crop of the camera at its full resolution, with no stretching. Instruments keep their place relative to the visible photo area, and the app remembers the choice on that device (`localStorage` key `arOrchestra.orient`).
+
+## 臨時 QR 取相
+
+影完相之後，可以上載到 Cloudflare Worker + R2 臨時相庫（保留 14 日），結果頁顯示大型 QR，訪客用自己電話掃描帶走個人相片。連結係難以猜測嘅獨立網址，冇公開相簿。詳情同部署步驟見 `worker/README.md`。
+
+前端設定喺 `photos-config.js` 嘅 `PHOTO_API_BASE`。留空就跳過上載，只保留「分享／儲存」。

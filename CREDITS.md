@@ -41,3 +41,7 @@ Plain HTML/CSS/JS written for this project. CC0 / public domain.
 
 - **School crest** (`assets/crest.png`): supplied by Charles. It's used here only for school purposes, and all rights belong to the school. The source already had a transparent background, so it was only trimmed and resized to 512 px.
 - **純潔 / 剛毅 / 120** are drawn in **jf open 粉圓 (Open Huninn) 2.1** by justfont, licensed under the SIL Open Font License 1.1 (https://github.com/justfont/open-huninn-font). `fonts/huninn-frame.woff2` is a subset with only the glyphs 純潔剛毅 and 0–9 (about 4 KB), which is allowed under the OFL. The frame title still uses the device's system font.
+
+## QR code library (`vendor/qrcode.js`)
+[qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase, MIT License.
+Vendored from `js/dist/qrcode.js` so the booth can draw the QR on-device after upload (no external QR API).

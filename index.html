@@ -73,7 +73,14 @@
 <div id="result" hidden>
   <div class="resultInner">
     <p class="hint" id="resultHint">相片已完成！</p>
-    <img id="resultImg" alt="拍好的相片">
+    <div class="resultMedia">
+      <img id="resultImg" alt="拍好的相片">
+      <div id="qrPanel" hidden>
+        <p id="qrStatus" class="qr-status">準備緊 QR code…</p>
+        <div id="qrCode" hidden aria-label="帶走相片的 QR code"></div>
+        <p id="qrCaption" hidden>用電話掃描帶走相片（保留 14 日）</p>
+      </div>
+    </div>
     <div class="resultBtns">
       <button id="shareBtn" class="primary" hidden>📤 分享 / 儲存</button>
       <a id="downloadLink" class="primary btnlike" download>💾 下載相片</a>
@@ -91,13 +98,15 @@
       <li>㩒一下樂器可以選中佢，上面會出現<b>放大、縮小、轉、反轉、刪除</b>掣。</li>
       <li>揀<b>直度</b>（3:4）或<b>橫度</b>（4:3）相片，唔理部機點拎都得；開「相框」可以加校徽同標題，再揀樣式（經典／校慶／簡約／全幅）。</li>
       <li>㩒中間嘅<b>大圓掣</b>影相。可以開「倒數」，有三秒準備時間。</li>
-      <li>影好之後㩒「分享 / 儲存」；iPhone / iPad 亦可以<b>長按相片</b>儲存。</li>
+      <li>影好之後會出現 <b>QR code</b>，用自己電話掃描就可以稍後睇同下載（保留 14 日）。亦可以㩒「分享 / 儲存」；iPhone / iPad 亦可以<b>長按相片</b>儲存。</li>
     </ol>
     <p class="small">電腦：用滑鼠拖動；滾輪放大縮小；Shift + 滾輪旋轉。</p>
     <button id="helpClose" class="primary">知道喇！</button>
   </div>
 </div>
 
+<script src="photos-config.js"></script>
+<script src="vendor/qrcode.js"></script>
 <script src="instruments.js"></script>
 <script src="frames.js"></script>
 <script src="app.js"></script>

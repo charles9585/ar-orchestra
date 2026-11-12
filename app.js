@@ -364,9 +364,96 @@
     return c;
   }
   const result = $('#result'), resultImg = $('#resultImg'), shareBtn = $('#shareBtn'), dl = $('#downloadLink');
-  let lastFile = null, lastUrl = null;
+  const resultHint = $('#resultHint'), qrPanel = $('#qrPanel'), qrCode = $('#qrCode'), qrStatus = $('#qrStatus'), qrCaption = $('#qrCaption');
+  let lastFile = null, lastUrl = null, uploadCtl = null;
   const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   function stamp() { const d = new Date(), p = n => String(n).padStart(2, '0'); return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`; }
+  function apiBase() {
+    const raw = String(window.PHOTO_API_BASE || '').trim().replace(/\/$/, '');
+    if (!raw || !/^https?:\/\//i.test(raw)) return '';
+    return raw;
+  }
+  function resetQr() {
+    if (uploadCtl) { try { uploadCtl.abort(); } catch (e) {} uploadCtl = null; }
+    if (!qrPanel) return;
+    qrPanel.hidden = true;
+    if (qrCode) { qrCode.hidden = true; qrCode.innerHTML = ''; }
+    if (qrCaption) qrCaption.hidden = true;
+    if (qrStatus) { qrStatus.hidden = true; qrStatus.textContent = ''; }
+  }
+  function showQrPreparing() {
+    qrPanel.hidden = false;
+    qrCode.hidden = true; qrCode.innerHTML = '';
+    qrCaption.hidden = true;
+    qrStatus.hidden = false;
+    qrStatus.textContent = '準備緊 QR code…';
+  }
+  function showQr(url) {
+    const qr = qrcode(0, 'M');
+    qr.addData(url);
+    qr.make();
+    qrCode.innerHTML = qr.createSvgTag({ cellSize: 8, margin: 2, scalable: true, alt: '帶走相片的 QR code' });
+    qrCode.hidden = false;
+    qrCaption.hidden = false;
+    qrStatus.hidden = true;
+  }
+  function showQrFail() {
+    qrPanel.hidden = true;
+    qrCode.hidden = true; qrCode.innerHTML = '';
+    qrCaption.hidden = true;
+    qrStatus.hidden = true;
+    resultHint.textContent = '暫時出唔到 QR，請用分享或儲存帶走相片';
+  }
+  function loadImageFromBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('讀唔到相片')); };
+      img.src = url;
+    });
+  }
+  async function maybeCompress(blob) {
+    const LIMIT = 800 * 1024, MAX_EDGE = 2048;
+    try {
+      const img = await loadImageFromBlob(blob);
+      const w = img.naturalWidth, h = img.naturalHeight, edge = Math.max(w, h);
+      if (edge <= MAX_EDGE && blob.size <= LIMIT) return blob;
+      const scale = edge > MAX_EDGE ? MAX_EDGE / edge : 1;
+      const cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+      const cnv = document.createElement('canvas'); cnv.width = cw; cnv.height = ch;
+      cnv.getContext('2d').drawImage(img, 0, 0, cw, ch);
+      const out = await new Promise(r => cnv.toBlob(r, 'image/jpeg', 0.85));
+      return (out && out.size && out.size < blob.size) ? out : blob;
+    } catch (e) { return blob; }
+  }
+  async function uploadForQr(blob, title) {
+    const base = apiBase();
+    if (!base) return;
+    if (typeof qrcode !== 'function') { showQrFail(); return; }
+    showQrPreparing();
+    const ctl = new AbortController();
+    uploadCtl = ctl;
+    const t = setTimeout(() => ctl.abort(), 30000);
+    try {
+      const body = await maybeCompress(blob);
+      if (ctl.signal.aborted) return;
+      const url = base + '/upload?title=' + encodeURIComponent(title || '音樂課合照');
+      const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'image/jpeg' }, body, signal: ctl.signal });
+      if (!res.ok) throw new Error('upload ' + res.status);
+      const data = await res.json();
+      if (!data || !data.url) throw new Error('no url');
+      if (uploadCtl !== ctl) return;
+      showQr(data.url);
+    } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (uploadCtl !== ctl) return;
+      showQrFail();
+    } finally {
+      clearTimeout(t);
+      if (uploadCtl === ctl) uploadCtl = null;
+    }
+  }
   async function takePhoto() {
     if (state.busy || !state.stream) return; state.busy = true;
     try {
@@ -387,8 +474,10 @@
       const canShare = !!(navigator.canShare && navigator.canShare({ files: [lastFile] }));
       shareBtn.hidden = !canShare;
       dl.hidden = isIOS && canShare; // on iOS the share sheet (「儲存影像」) or long-press is the way to save
-      $('#resultHint').textContent = isIOS ? '相片完成！長按相片可以「加入照片」，或者㩒「分享 / 儲存」。' : '相片完成！可以分享或者下載。';
+      resultHint.textContent = isIOS ? '相片完成！長按相片可以「加入照片」，或者㩒「分享 / 儲存」。' : '相片完成！可以分享或者下載。';
+      resetQr();
       result.hidden = false;
+      uploadForQr(blob, state.title || '音樂課合照');
     } catch (e) { alert('影相失敗：' + (e.message || e)); }
     finally { state.busy = false; }
   }
@@ -401,7 +490,7 @@
     try { await navigator.share({ files: [lastFile], title: state.title || '音樂課合照' }); }
     catch (e) { if (e && e.name !== 'AbortError') { dl.hidden = false; alert('分享唔到，請用「下載相片」或長按相片儲存。'); } }
   });
-  $('#againBtn').addEventListener('click', () => { result.hidden = true; });
+  $('#againBtn').addEventListener('click', () => { resetQr(); result.hidden = true; });
 
   // ---------- help ----------
   $('#helpBtn').addEventListener('click', () => { $('#help').hidden = false; });

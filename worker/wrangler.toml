@@ -1,0 +1,22 @@
+# 樂器合照：臨時相庫（Cloudflare Worker + KV）
+# 部署步驟見 README.md。此檔不含任何秘密金鑰。
+# 用 KV 而非 R2，以免帳戶要綁信用卡。相片仍會喺 14 日後自動過期刪除。
+
+name = "ar-orchestra-photos"
+main = "src/index.js"
+compatibility_date = "2026-11-12"
+account_id = "1d5955ca602672c62c5f6855fcce2ff6"
+workers_dev = true
+
+# 可選：自訂網域後把公開網址寫喺呢度（唔加結尾斜線）。
+# 唔填就用請求本身嘅 origin（workers.dev 或 wrangler dev 都得）。
+# [vars]
+# PUBLIC_BASE_URL = "https://photos.example.com"
+
+[[kv_namespaces]]
+binding = "PHOTOS"
+id = "8f82afd76b2d41a6a77aae95acaefdef"
+
+# 每日 00:00（亞洲／澳門，UTC+8）再清一次過期物件（KV 本身亦會到期自動刪）
+[triggers]
+crons = ["0 16 * * *"]
